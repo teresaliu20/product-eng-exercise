@@ -48,7 +48,7 @@ export function DataTable<RowType>({
   );
 
   const table = useReactTable({
-    data: rowData,
+    data: data, // changed from rowData to data since the component was not re-rendering otherwise
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),

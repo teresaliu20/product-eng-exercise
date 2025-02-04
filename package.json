@@ -17,5 +17,10 @@
     "api",
     "web"
   ],
-  "packageManager": "npm@10.8.1"
+  "packageManager": "npm@10.8.1",
+  "dependencies": {
+    "@headlessui/react": "^2.2.0",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.474.0"
+  }
 }
