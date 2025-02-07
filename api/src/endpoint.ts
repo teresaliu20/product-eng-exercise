@@ -118,7 +118,7 @@ function queryHandler(req: Request, res: Response<{ data: FeedbackData }>) {
 
 type FeedbackGroup = {
   name: string;
-  feedback: Feedback[];
+  groupings: Feedback[];
 };
 
 async function groupHandler(
@@ -140,13 +140,15 @@ async function groupHandler(
     body: JSON.stringify({ feedback }),
   });
 
-  const pythonData = (await pythonRes.json()) as { feedback: Feedback[] };
+  const pythonData = (await pythonRes.json()) as { groupings: any };
+  console.log("in group handler")
+  console.log(pythonData)
 
   res.status(200).json({
     data: [
       {
         name: "All feedback",
-        feedback: pythonData.feedback,
+        groupings: pythonData.groupings,
       },
     ],
   });

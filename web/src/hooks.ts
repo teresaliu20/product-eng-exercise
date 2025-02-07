@@ -10,11 +10,22 @@ type Feedback = {
   date: string;
 };
 
+type Cluster = {
+  id: number;
+  name: string;
+  summary: string;
+  highImportanceCount: number;
+  totalFeedbackCount: number;
+  priority: number;
+  originalRows: Feedback[]
+}
+
 export type FeedbackData = Feedback[];
 
 export type FeedbackGroup = {
   name: string;
   feedback: Feedback[];
+  groupings: Cluster[];
 };
 
 export function useFeedbackQuery(filters: Record<string, string[]>) {

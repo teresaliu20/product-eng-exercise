@@ -10,6 +10,8 @@ export function Groups({ filters }: Props) {
     _: "Update this object to pass data to the /groups endpoint.",
     filters,
   });
+  console.log("Groups")
+  console.log(dataReq?.data?.data[0].groupings)
 
   if (dataReq.isLoading || !dataReq.data) {
     return <div>Loading...</div>;
