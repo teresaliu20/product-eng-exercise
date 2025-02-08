@@ -4,7 +4,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
 def cluster_feedback(feedback):
-  print("clustering feedback...")
   # Load the CSV file
   # file_path = "feedback_data.csv"  # <-- Change this to your actual file path
   df = pd.DataFrame.from_dict(feedback)
@@ -47,10 +46,6 @@ def cluster_feedback(feedback):
   priority_df = prioritize_trends(grouped_feedback)
 
   refined_priority_df = generate_keyword_summaries(priority_df, grouped_feedback, vectorizer)
-
-  print(f"Clustering complete!")
-  print(len(refined_priority_df))
-  print(refined_priority_df)
   return refined_priority_df
 
 # Prioritize trends based on importance

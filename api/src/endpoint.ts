@@ -25,7 +25,7 @@ type Filters = {
   date?: DateFilter;
 }
 
-type Group = {
+type FeedbackGroup = {
   id: number;
   name: string;
   summary: string;
@@ -45,12 +45,10 @@ router.post("/groups", groupHandler);
 
 const feedback: FeedbackData = json as any;
 
-
 function queryHandler(req: Request, res: Response<{ data: FeedbackData }>) {
-  const filters = req.body.filters || { importance: [], type: [], customer: [], date: undefined };
-  /**
-   * TODO(part-1): Implement query handling
-   */
+  const filters: Filters = req.body.filters || { importance: [], type: [], customer: [], date: undefined };
+  
+  // apply filters to array of feedback
   let filteredFeedback: FeedbackData = feedback;
   if (filters.importance.length > 0) {
     filteredFeedback = filteredFeedback.filter((f) => filters.importance.includes(f.importance))
@@ -107,6 +105,7 @@ function queryHandler(req: Request, res: Response<{ data: FeedbackData }>) {
         });
         break;
 
+      // custom date range filters feedback within startDate and endDate
       case 'Custom Date Range':
         if (startDate && endDate) {
           const start = new Date(startDate);
@@ -122,20 +121,10 @@ function queryHandler(req: Request, res: Response<{ data: FeedbackData }>) {
   res.status(200).json({ data: filteredFeedback });
 }
 
-type FeedbackGroup = {
-  groupings: Group[];
-};
-
 async function groupHandler(
   req: Request,
   res: Response<{ data: FeedbackGroup[] }>
 ) {
-  const body = req;
-
-  /**
-   * TODO(part-2): Implement filtering + grouping
-   */
-
   const pythonRes = await fetch("http://127.0.0.1:8000/", {
     method: "POST",
     headers: {
@@ -145,12 +134,8 @@ async function groupHandler(
     body: JSON.stringify({ feedback }),
   });
 
-  const pythonData = (await pythonRes.json()) as { groupings: Group[] };
+  const pythonData = (await pythonRes.json()) as { groupings: FeedbackGroup[] };
   res.status(200).json({
-    data: [
-      {
-        groupings: pythonData.groupings,
-      },
-    ],
+    data: pythonData.groupings,
   });
 }

@@ -1,23 +1,34 @@
 import { useState } from 'react';
 import { CalendarDays, UserRoundSearch, ListChecks, CircleAlert, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filters } from '../types'
 
-const TableFilter = ({ filters, onFilterChange }) => {
+type FilterOptions = {
+  importance: string[];
+  type: string[];
+  customer: string[];
+  date: string[];
+};
+
+type TableFilterProps = {
+  filters: Filters;
+  onFilterChange: any; // note: was getting really weird typescript issues
+}
+
+const TableFilter = ({ filters, onFilterChange }: TableFilterProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState(null);
+  const [selectedFilter, setSelectedFilter] = useState<keyof FilterOptions | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [dateRange, setDateRange] = useState('');
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
-
-  const filterOptions = {
+  const filterOptions: FilterOptions = {
     importance: ['High', 'Medium', 'Low'],
     type: ["Sales", "Customer", "Research"],
     customer: ["Loom", "Ramp", "Brex", "Vanta", "Notion", "Linear", "OpenAI"],
     date: ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'Custom Date Range'] };
 
-  const handleFilterClick = (filter) => {
-    setSelectedFilter(filter);
+  const handleFilterClick = (filter: string) => {
+    setSelectedFilter(filter as keyof FilterOptions);
     setShowDatePicker(false);
   };
 
@@ -26,25 +37,28 @@ const TableFilter = ({ filters, onFilterChange }) => {
     setShowDatePicker(false);
   };
 
-  const handleOptionToggle = (option) => {
-    onFilterChange(prev => {
-      const currentSelections = prev[selectedFilter] || [];
+  const handleOptionToggle = (option: string) => {
+    if (!selectedFilter) return; 
+  
+    onFilterChange((prev: Filters) => {
+      const key = selectedFilter as keyof Filters; 
+      const currentSelections = Array.isArray(prev[key]) ? prev[key] : [];
       const newSelections = currentSelections.includes(option)
-        ? currentSelections.filter(item => item !== option)
+        ? currentSelections.filter((item) => item !== option)
         : [...currentSelections, option];
-      
+  
       return {
         ...prev,
-        [selectedFilter]: newSelections
+        [key]: newSelections,
       };
     });
   };
 
-  const handleDateClick = (option) => {
+  const handleDateClick = (option: string) => {
     if (option === 'Custom Date Range') {
       setShowDatePicker(true);
     } else {
-      onFilterChange(prev => ({
+      onFilterChange((prev: Filters) => ({
         ...prev,
         date: {
           timeframe: option
@@ -53,43 +67,38 @@ const TableFilter = ({ filters, onFilterChange }) => {
     }
   };
 
-  const handleDateSelect = (e, type) => {
-    const selectedDate = new Date(e.target.value);
-    if (isNaN(selectedDate.getTime())) {
-      return
-    }
+ const handleDateSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'start' | 'end') => {
+  const selectedDate = new Date(e.target.value);
+  if (isNaN(selectedDate.getTime())) return;
 
-    if (type === 'start') {
-      setStartDate(selectedDate);
-    } else {
-      setEndDate(selectedDate);
-    }
-
-    if (type === 'start' && endDate) {
-      onFilterChange(prev => ({
+  if (type === 'start') {
+    setStartDate(selectedDate);
+    if (endDate) {
+      onFilterChange((prev: Filters) => ({
         ...prev,
         date: {
+          ...prev.date, // Preserve other possible properties in date
           timeframe: 'Custom Date Range',
           startDate: selectedDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0]
-        }
-      }));
-    } else if (type === 'end' && startDate) {
-      onFilterChange(prev => ({
-        ...prev,
-        date: {
-          timeframe: 'Custom Date Range',
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: selectedDate.toISOString().split('T')[0]
-        }
+          endDate: endDate.toISOString().split('T')[0],
+        },
       }));
     }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString();
-  };
+  } else {
+    setEndDate(selectedDate);
+    if (startDate) {
+      onFilterChange((prev: Filters) => ({
+        ...prev,
+        date: {
+          ...prev.date,
+          timeframe: 'Custom Date Range',
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: selectedDate.toISOString().split('T')[0],
+        },
+      }));
+    }
+  }
+};
 
   return (
     <div className="relative w-64">
@@ -171,7 +180,7 @@ const TableFilter = ({ filters, onFilterChange }) => {
                 </div>
               ) : (
                 <div className="border-t pt-2">
-                  {filterOptions[selectedFilter].map(option => (
+                  {filterOptions[selectedFilter].map((option: string) => (
                     <label
                       key={option}
                       className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer rounded"

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Filters } from "./types"
 
 type Feedback = {
   id: number;
@@ -10,7 +11,9 @@ type Feedback = {
   date: string;
 };
 
-type Group = {
+export type FeedbackData = Feedback[];
+
+export type FeedbackGroup = {
   id: number;
   name: string;
   summary: string;
@@ -20,15 +23,7 @@ type Group = {
   feedback: Feedback[]
 }
 
-export type FeedbackData = Feedback[];
-
-export type FeedbackGroup = {
-  name: string;
-  feedback: Feedback[];
-  groupings: Group[];
-};
-
-export function useFeedbackQuery(filters: Record<string, string[]>) {
+export function useFeedbackQuery(filters: Filters) {
   return useQuery<{ data: FeedbackData }>({
     queryKey: ["feedback", filters],
     queryFn: async () => {
@@ -43,7 +38,7 @@ export function useFeedbackQuery(filters: Record<string, string[]>) {
     },
     // These options ensure fresh data while maintaining proper caching
     refetchOnWindowFocus: false,
-    staleTime: 3000  // Consider data stale immediately
+    staleTime: 3000
   });
 }
 
