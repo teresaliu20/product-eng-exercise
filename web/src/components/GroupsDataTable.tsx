@@ -1,6 +1,7 @@
 import cx from "classnames";
 import { useState } from "react";
 import { FeedbackGroup } from "../hooks";
+import { CircleAlert, MessageCircle } from 'lucide-react';
 import { DataTable } from "./DataTable";
 
 const importanceValue = {
@@ -28,6 +29,16 @@ export function GroupsDataTable({ data }: { data: FeedbackGroup[] }) {
             })}
           >
             <div className="mb-2 text-base font-semibold">{group.name}</div>
+            <div className="text-sm mb-2">{group.summary}</div>
+            
+            <div className="flex items-center text-sm font-semibold text-primary-main">
+              <MessageCircle className="w-3 h-3 mr-1" />
+              {`Total Issues: ${group.totalFeedbackCount}`}
+            </div>
+            <div className="flex items-center text-sm font-semibold text-primary-main">
+              <CircleAlert className="w-3 h-3 mr-1" />
+              {`High Priority Issues: ${group.highImportanceCount}`}
+            </div>
           </div>
         ))}
       </div>
@@ -52,10 +63,11 @@ export function GroupsDataTable({ data }: { data: FeedbackGroup[] }) {
             })}
           schema={[
             {
-              headerName: "Description",
+              headerName: "Name",
               cellRenderer: (row) => (
                 <div className="py-3">
-                  <div className="font-semibold">{row.name}</div>
+                  <div className="mb-2 font-semibold">{row.name}</div>
+                  <div className="text-sm">{row.description}</div>
                 </div>
               ),
             },

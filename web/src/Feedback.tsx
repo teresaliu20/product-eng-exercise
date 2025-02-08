@@ -1,19 +1,38 @@
 import { FeedbackDataTable } from "./components/FeedbackDataTable";
 import { useFeedbackQuery } from "./hooks";
+import { useState, useCallback, useMemo } from "react";
+import FilterMenu from "./components/FilterMenu";
+import { Filters } from './types'
 
-type Props = {
-  filters?: unknown;
-};
 
-export function Feedback({ filters }: Props) {
-  const dataReq = useFeedbackQuery({
-    _: "Update this object to pass data to the /query endpoint.",
-    filters,
+export function Feedback() {
+  const [filters, setFilters] = useState<Filters>({
+    importance: [],
+    type: [],
+    customer: [],
+    date: {
+      timeframe: "",
+      startDate: "",
+      endDate: "",
+    },
   });
 
-  if (dataReq.isLoading) {
-    return <div>Loading...</div>;
-  }
+  const { data } = useFeedbackQuery(filters);
+  
+  // Memoize the data to ensure stable reference
+  const tableData = useMemo(() => data?.data || [], [data?.data]);
 
-  return <FeedbackDataTable data={dataReq.data!.data} />;
+  // Handle filter changes with a stable callback
+  const handleFilterChange = useCallback((newFilters: Filters) => {
+    setFilters(newFilters);
+  }, []);
+
+  return (
+    <>
+      <FilterMenu filters={filters} onFilterChange={handleFilterChange} />
+      <FeedbackDataTable 
+        data={tableData || []} 
+      />
+    </>
+  );
 }

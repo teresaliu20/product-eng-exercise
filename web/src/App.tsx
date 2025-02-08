@@ -32,9 +32,9 @@ function App() {
          * TODO(part-1): Add filter options
          */}
         {selectedTab === "feedback" ? (
-          <Feedback filters={{}} />
+          <Feedback/>
         ) : (
-          <Groups filters={{}} />
+          <Groups/>
         )}
       </div>
     </div>

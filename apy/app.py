@@ -1,20 +1,13 @@
-import math
-import os
-
+from cluster import cluster_feedback
 from dotenv import load_dotenv
-from flask import request
+from flask import request, Flask
 
 load_dotenv()
-import time
-
-from flask import Flask
 
 app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def endpoint():
     post_body = request.get_json()
-
-    print('Received feedback: ' + str(len(post_body['feedback'])))
-   
-    return {'feedback': post_body['feedback']}
+    clusters = cluster_feedback(post_body['feedback'])
+    return {'groupings': clusters}
