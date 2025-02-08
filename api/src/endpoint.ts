@@ -13,9 +13,26 @@ type Feedback = {
 };
 
 type DateFilter = {
-  timeframe: '1day' | '3days' | '1week' | '1month' | '3months' | 'custom';
-  comparison: 'before' | 'after';
-  date?: string; // Only needed for custom timeframe
+  timeframe: 'Today' | 'Yesterday' | 'Last 7 Days' | 'Last 30 Days' | 'Last 90 Days' | 'Custom Date Range'
+  startDate?: string; // Only needed for custom date range
+  endDate?: string; // Only needed for custom date range
+}
+
+type Filters = {
+  importance: string[];
+  type: string[];
+  customer: string[];
+  date?: DateFilter;
+}
+
+type Group = {
+  id: number;
+  name: string;
+  summary: string;
+  highImportanceCount: number;
+  totalFeedbackCount: number;
+  priority: number;
+  feedback: Feedback[]
 }
 
 type FeedbackData = Feedback[];
@@ -30,12 +47,11 @@ const feedback: FeedbackData = json as any;
 
 
 function queryHandler(req: Request, res: Response<{ data: FeedbackData }>) {
-  const body = req.body;
-  const filters = body.filters
+  const filters = req.body.filters || { importance: [], type: [], customer: [], date: undefined };
   /**
    * TODO(part-1): Implement query handling
    */
-  let filteredFeedback = feedback;
+  let filteredFeedback: FeedbackData = feedback;
   if (filters.importance.length > 0) {
     filteredFeedback = filteredFeedback.filter((f) => filters.importance.includes(f.importance))
   }
@@ -46,79 +62,68 @@ function queryHandler(req: Request, res: Response<{ data: FeedbackData }>) {
     filteredFeedback = filteredFeedback.filter((f) => filters.customer.includes(f.customer))
   }
   if (filters.date) {
-    console.log("filtering by date", filters.date)
     const now = new Date();
-    const { timeframe, comparison, date } = filters.date;
+    const { timeframe, startDate, endDate } = filters.date;
     
     switch (timeframe) {
-      case '1day':
-        const oneDayFromNow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+      case 'Today':
+        const today = new Date(now.setHours(0, 0, 0, 0));
         filteredFeedback = filteredFeedback.filter((f) => {
           const feedbackDate = new Date(f.date);
-          return comparison === 'before' 
-            ? feedbackDate <= oneDayFromNow
-            : feedbackDate >= oneDayFromNow;
+          return feedbackDate.getTime() === today.getTime();
         });
         break;
-    
-      case '3days':
-        const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+
+      case 'Yesterday':
+        const yesterday = new Date(now.setDate(now.getDate() - 1));
+        yesterday.setHours(0, 0, 0, 0);
         filteredFeedback = filteredFeedback.filter((f) => {
           const feedbackDate = new Date(f.date);
-          return comparison === 'before'
-            ? feedbackDate <= threeDaysFromNow
-            : feedbackDate >= threeDaysFromNow;
+          return feedbackDate.getTime() === yesterday.getTime();
         });
         break;
-    
-      case '1week':
-        const oneWeekFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+
+      case 'Last 7 Days':
+        const last7Days = new Date(now.setDate(now.getDate() - 7));
         filteredFeedback = filteredFeedback.filter((f) => {
           const feedbackDate = new Date(f.date);
-          return comparison === 'before'
-            ? feedbackDate <= oneWeekFromNow
-            : feedbackDate >= oneWeekFromNow;
+          return feedbackDate >= last7Days;
         });
         break;
-    
-      case '1month':
-        const oneMonthFromNow = new Date(now.setMonth(now.getMonth() + 1));
+
+      case 'Last 30 Days':
+        const last30Days = new Date(now.setDate(now.getDate() - 30));
         filteredFeedback = filteredFeedback.filter((f) => {
           const feedbackDate = new Date(f.date);
-          return comparison === 'before'
-            ? feedbackDate <= oneMonthFromNow
-            : feedbackDate >= oneMonthFromNow;
+          return feedbackDate >= last30Days;
         });
         break;
-    
-      case '3months':
-        const threeMonthsFromNow = new Date(now.setMonth(now.getMonth() + 3));
+
+      case 'Last 90 Days':
+        const last90Days = new Date(now.setDate(now.getDate() - 90));
         filteredFeedback = filteredFeedback.filter((f) => {
           const feedbackDate = new Date(f.date);
-          return comparison === 'before'
-            ? feedbackDate <= threeMonthsFromNow
-            : feedbackDate >= threeMonthsFromNow;
+          return feedbackDate >= last90Days;
         });
         break;
-    
-      case 'custom':
-        const customDate = new Date(date);
-        filteredFeedback = filteredFeedback.filter((f) => {
-          const feedbackDate = new Date(f.date);
-          return comparison === 'before'
-            ? feedbackDate <= customDate
-            : feedbackDate >= customDate;
-        });
+
+      case 'Custom Date Range':
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          filteredFeedback = filteredFeedback.filter((f) => {
+            const feedbackDate = new Date(f.date);
+            return feedbackDate >= start && feedbackDate <= end;
+          });
+        }
         break;
     }
   }
-  // Add date logic
   res.status(200).json({ data: filteredFeedback });
 }
 
 type FeedbackGroup = {
-  name: string;
-  groupings: Feedback[];
+  groupings: Group[];
 };
 
 async function groupHandler(
@@ -140,14 +145,10 @@ async function groupHandler(
     body: JSON.stringify({ feedback }),
   });
 
-  const pythonData = (await pythonRes.json()) as { groupings: any };
-  console.log("in group handler")
-  console.log(pythonData)
-
+  const pythonData = (await pythonRes.json()) as { groupings: Group[] };
   res.status(200).json({
     data: [
       {
-        name: "All feedback",
         groupings: pythonData.groupings,
       },
     ],

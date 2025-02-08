@@ -17,5 +17,5 @@ export function Groups({ filters }: Props) {
     return <div>Loading...</div>;
   }
 
-  return <GroupsDataTable data={dataReq.data.data} />;
+  return <GroupsDataTable data={dataReq?.data?.data[0].groupings || []} />;
 }

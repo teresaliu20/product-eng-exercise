@@ -94,8 +94,8 @@ def generate_keyword_summaries(priority_df, grouped_feedback, vectorizer):
         feature_array = np.array(vectorizer.get_feature_names_out())
         top_keywords = feature_array[np.argsort(cluster_vector.toarray()).flatten()][-5:]  # Top 5 words
 
-        summary = f"This cluster focuses on issues related to {', '.join(top_keywords)}. "
-        summary += "Key concerns include " + "; ".join(descriptions[:5])
+        summary = f"This cluster is based off key words: {', '.join(top_keywords)}. "
+        summary += "Preview of feedback includes: " + "; ".join(descriptions[:4])
 
         refined_list.append({
             "id": cluster_id,
@@ -104,7 +104,7 @@ def generate_keyword_summaries(priority_df, grouped_feedback, vectorizer):
             "highImportanceCount": row["High Importance Count"],
             "totalFeedbackCount": row["Total Feedback Count"],
             "priority": row["Priority Score"],
-            "originalRows": feedback_data
+            "feedback": feedback_data
         })
 
     return refined_list

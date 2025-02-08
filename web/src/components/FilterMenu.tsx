@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { CalendarDays, UserRoundSearch, ListChecks, CircleAlert, ChevronDown, ChevronUp } from 'lucide-react';
 
 const TableFilter = ({ filters, onFilterChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState('');
-  const [dateComparison, setDateComparison] = useState('after'); // 'before' or 'after'
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
 
   const filterOptions = {
     importance: ['High', 'Medium', 'Low'],
     type: ["Sales", "Customer", "Research"],
     customer: ["Loom", "Ramp", "Brex", "Vanta", "Notion", "Linear", "OpenAI"],
-    date: ['1day', '3days', '1week', '1month', '3months', 'custom']
-  };
+    date: ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'Custom Date Range'] };
 
   const handleFilterClick = (filter) => {
     setSelectedFilter(filter);
@@ -41,66 +41,46 @@ const TableFilter = ({ filters, onFilterChange }) => {
   };
 
   const handleDateClick = (option) => {
-    if (option === 'custom') {
+    if (option === 'Custom Date Range') {
       setShowDatePicker(true);
     } else {
-      const today = new Date();
-      let targetDate = new Date();
-      
-      switch (option) {
-        case '1day':
-          targetDate.setDate(today.getDate() + 1);
-          break;
-        case '3days':
-          targetDate.setDate(today.getDate() + 3);
-          break;
-        case '1week':
-          targetDate.setDate(today.getDate() + 7);
-          break;
-        case '1month':
-          targetDate.setMonth(today.getMonth() + 1);
-          break;
-        case '3months':
-          targetDate.setMonth(today.getMonth() + 3);
-          break;
-        default:
-          break;
-      }
-
-      setSelectedDate(targetDate);
-      setDateRange(option);
       onFilterChange(prev => ({
         ...prev,
         date: {
-          timeframe: option,
-          comparison: dateComparison,
-          date: targetDate.toISOString().split('T')[0]
+          timeframe: option
         }
       }));
     }
   };
 
-  const handleDateSelect = (e) => {
-    const date = new Date(e.target.value);
-    setSelectedDate(date);
-    onFilterChange(prev => ({
-      ...prev,
-      date: {
-        timeframe: 'custom',
-        comparison: dateComparison,
-        date: date.toISOString().split('T')[0]
-      }
-    }));
-  };
+  const handleDateSelect = (e, type) => {
+    const selectedDate = new Date(e.target.value);
+    if (isNaN(selectedDate.getTime())) {
+      return
+    }
 
-  const handleComparisonChange = (comparison) => {
-    setDateComparison(comparison);
-    if (selectedDate) {
+    if (type === 'start') {
+      setStartDate(selectedDate);
+    } else {
+      setEndDate(selectedDate);
+    }
+
+    if (type === 'start' && endDate) {
       onFilterChange(prev => ({
         ...prev,
         date: {
-          ...prev.date,
-          comparison
+          timeframe: 'Custom Date Range',
+          startDate: selectedDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        }
+      }));
+    } else if (type === 'end' && startDate) {
+      onFilterChange(prev => ({
+        ...prev,
+        date: {
+          timeframe: 'Custom Date Range',
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: selectedDate.toISOString().split('T')[0]
         }
       }));
     }
@@ -115,24 +95,15 @@ const TableFilter = ({ filters, onFilterChange }) => {
     <div className="relative w-64">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-20 px-4 py-2 text-left border rounded-lg bg-white hover:bg-gray-50 flex items-center justify-between"
+        className="w-30 px-4 py-2 text-left border rounded-lg bg-white hover:bg-gray-50 flex items-center justify-between"
       >
-        <span>Filter</span>
-        {/* {filters.date && (
-          <span className="text-sm text-gray-600">
-            {dateComparison} {formatDate(filters.date.value)}
-          </span>
-        )} */}
-      </button>
-      <div>
-        <span>
+        <p>Filter</p>
         {
-          filters?.date?.comparison && "Due Date " + filters?.date?.comparison + " " + filters?.date?.date || filters?.date?.timeframe
+          isOpen ? 
+          <ChevronUp className="w-4 h-4 ml-2" /> :
+          <ChevronDown className="w-4 h-4 ml-2" />
         }
-        </span>
-        
-      </div>
-
+      </button>
       {isOpen && (
         <div className="absolute mt-2 w-64 bg-white border rounded-lg shadow-lg z-10">
           {!selectedFilter ? (
@@ -143,7 +114,10 @@ const TableFilter = ({ filters, onFilterChange }) => {
                   onClick={() => handleFilterClick(filter)}
                   className="w-full px-4 py-2 text-left hover:bg-gray-100 rounded flex items-center"
                 >
-                  {filter === 'date' && <Calendar className="w-4 h-4 mr-2" />}
+                  {filter === 'importance' && <CircleAlert className="w-4 h-4 mr-2" />}
+                  {filter === 'type' && <ListChecks className="w-4 h-4 mr-2" />}
+                  {filter === 'customer' && <UserRoundSearch className="w-4 h-4 mr-2" />}
+                  {filter === 'date' && <CalendarDays className="w-4 h-4 mr-2" />}
                   {filter.charAt(0).toUpperCase() + filter.slice(1)}
                 </button>
               ))}
@@ -162,28 +136,6 @@ const TableFilter = ({ filters, onFilterChange }) => {
                 <div className="border-t pt-2">
                   {!showDatePicker ? (
                     <>
-                      <div className="flex space-x-2 mb-4">
-                        <button
-                          onClick={() => handleComparisonChange('before')}
-                          className={`px-3 py-1 rounded ${
-                            dateComparison === 'before'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-100'
-                          }`}
-                        >
-                          Before
-                        </button>
-                        <button
-                          onClick={() => handleComparisonChange('after')}
-                          className={`px-3 py-1 rounded ${
-                            dateComparison === 'after'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-100'
-                          }`}
-                        >
-                          After
-                        </button>
-                      </div>
                       {filterOptions.date.map(option => (
                         <button
                           key={option}
@@ -195,13 +147,25 @@ const TableFilter = ({ filters, onFilterChange }) => {
                       ))}
                     </>
                   ) : (
-                    <div className="p-2">
-                      <input
-                        type="date"
-                        onChange={handleDateSelect}
-                        className="w-full p-2 border rounded"
-                        value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
-                      />
+                    <div>
+                      <div className="p-2">
+                        <label className="block mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          onChange={(e) => handleDateSelect(e, 'start')}
+                          className="w-full p-2 border rounded"
+                          value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                        />
+                      </div>
+                      <div className="p-2">
+                        <label className="block mb-1">End Date</label>
+                        <input
+                          type="date"
+                          onChange={(e) => handleDateSelect(e, 'end')}
+                          className="w-full p-2 border rounded"
+                          value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -214,7 +178,8 @@ const TableFilter = ({ filters, onFilterChange }) => {
                     >
                       <input
                         type="checkbox"
-                        className="mr-2"
+
+                        className="mr-2 accent-purple-900"
                         checked={(filters[selectedFilter] || []).includes(option)}
                         onChange={() => handleOptionToggle(option)}
                       />
